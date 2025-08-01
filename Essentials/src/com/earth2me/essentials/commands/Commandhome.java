@@ -59,6 +59,21 @@ public class Commandhome extends EssentialsCommand
 			}
 			goHome(user, player, homeName.toLowerCase(Locale.ENGLISH), charge);
 		}
+		catch (IndexOutOfBoundsException e)
+		{
+			// Handle specific case when player tries to access home number larger than available homes
+			if (e.getMessage() != null && e.getMessage().contains("Home number") && e.getMessage().contains("is out of range"))
+			{
+				String[] parts = e.getMessage().split(" ");
+				String homeNumber = parts[2];
+				String homeCount = parts[parts.length - 2];
+				user.sendMessage(_("homeNumberOutOfRange", homeNumber, homeCount));
+			}
+			else
+			{
+				throw e;
+			}
+		}
 		catch (NotEnoughArgumentsException e)
 		{
 			Location bed = player.getBedSpawnLocation();

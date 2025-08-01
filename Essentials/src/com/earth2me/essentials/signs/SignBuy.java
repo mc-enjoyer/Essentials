@@ -5,9 +5,7 @@ import com.earth2me.essentials.Trade;
 import com.earth2me.essentials.User;
 import net.ess3.api.IEssentials;
 import net.ess3.api.MaxMoneyException;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
-
+import static com.earth2me.essentials.I18n._;
 
 public class SignBuy extends EssentialsSign
 {
@@ -19,7 +17,7 @@ public class SignBuy extends EssentialsSign
 	@Override
 	protected boolean shouldSkipThrottle()
 	{
-		return true; // Skip throttling for fast clicking
+		return true; // Skip throttle for buy signs - allow fast clicking
 	}
 
 	@Override
@@ -44,6 +42,8 @@ public class SignBuy extends EssentialsSign
 		}
 		catch (ChargeException e)
 		{
+			// Log detailed error to console
+			ess.getLogger().warning("Buy sign affordability check failed for player " + username + ": " + e.getMessage());
 			// Show the error message to the player
 			ess.showError(player.getSource(), e, "sign: Buy");
 			return false;
@@ -55,8 +55,10 @@ public class SignBuy extends EssentialsSign
 			// Check if player can receive items
 			if (!items.pay(player))
 			{
+				// Log detailed error to console
+				ess.getLogger().warning("Buy sign inventory full for player " + username);
 				// Show inventory full message to player
-				ess.showError(player.getSource(), new Exception("Inventory is full"), "sign: Buy");
+				ess.showError(player.getSource(), new Exception(_("inventoryFull")), "sign: Buy");
 				return false; // Inventory full
 			}
 			
@@ -69,6 +71,8 @@ public class SignBuy extends EssentialsSign
 		}
 		catch (Exception e)
 		{
+			// Log detailed error to console
+			ess.getLogger().warning("Buy sign transaction failed for player " + username + ": " + e.getMessage());
 			// Show the error message to the player
 			ess.showError(player.getSource(), e, "sign: Buy");
 			return false;

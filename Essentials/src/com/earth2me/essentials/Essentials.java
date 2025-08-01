@@ -23,8 +23,10 @@ import com.earth2me.essentials.commands.IEssentialsCommand;
 import com.earth2me.essentials.commands.NoChargeException;
 import com.earth2me.essentials.commands.NotEnoughArgumentsException;
 import com.earth2me.essentials.commands.QuietAbortException;
+import com.earth2me.essentials.commands.WarpNotFoundException;
 
 import com.earth2me.essentials.perm.PermissionsHandler;
+import net.ess3.api.MaxMoneyException;
 import com.earth2me.essentials.register.payment.Methods;
 import com.earth2me.essentials.signs.SignBlockListener;
 import com.earth2me.essentials.signs.SignEntityListener;
@@ -35,8 +37,12 @@ import com.earth2me.essentials.textreader.SimpleTextInput;
 import com.earth2me.essentials.utils.DateUtil;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -556,10 +562,92 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials
 	@Override
 	public void showError(final CommandSource sender, final Throwable exception, final String commandLabel)
 	{
-		sender.sendMessage(_("errorWithMessage", exception.getMessage()));
-		if (getSettings().isDebug())
+		// Always log the full error details to console
+		LOGGER.log(Level.WARNING, _("errorCallingCommand", commandLabel), exception);
+		
+		// Save error to file for debugging
+		saveErrorToFile(exception, commandLabel, sender);
+		
+		// Handle specific exceptions that should show their message to players
+		if (exception instanceof ChargeException)
 		{
-			LOGGER.log(Level.WARNING, _("errorCallingCommand", commandLabel), exception);
+			// ChargeException contains user-friendly messages that should be shown to players
+			sender.sendMessage(exception.getMessage());
+		}
+		else if (exception instanceof MaxMoneyException)
+		{
+			// MaxMoneyException contains user-friendly messages
+			sender.sendMessage(exception.getMessage());
+		}
+		else if (exception instanceof WarpNotFoundException)
+		{
+			// WarpNotFoundException contains user-friendly messages
+			sender.sendMessage(exception.getMessage());
+		}
+		else if (exception instanceof NotEnoughArgumentsException)
+		{
+			// NotEnoughArgumentsException may contain user-friendly messages
+			if (exception.getMessage() != null && !exception.getMessage().isEmpty())
+			{
+				sender.sendMessage(exception.getMessage());
+			}
+			else
+			{
+				sender.sendMessage(_("genericError"));
+			}
+		}
+		else if (exception instanceof QuietAbortException)
+		{
+			// QuietAbortException is used for silent command failures
+			// Don't send any message to the player
+		}
+		else if (exception instanceof NoChargeException)
+		{
+			// NoChargeException is used for silent charging - don't show message
+		}
+		else
+		{
+			// Show generic error message to players for other exceptions
+			sender.sendMessage(_("genericError"));
+		}
+	}
+	
+	private void saveErrorToFile(final Throwable exception, final String commandLabel, final CommandSource sender)
+	{
+		try
+		{
+			// Create errors directory if it doesn't exist
+			File errorsDir = new File(getDataFolder(), "errors");
+			if (!errorsDir.exists())
+			{
+				errorsDir.mkdirs();
+			}
+			
+			// Create filename with timestamp
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+			String timestamp = sdf.format(new Date());
+			String filename = "error_" + timestamp + ".txt";
+			File errorFile = new File(errorsDir, filename);
+			
+			// Write error details to file
+			try (PrintWriter writer = new PrintWriter(new FileWriter(errorFile)))
+			{
+				writer.println("Essentials Error Log");
+				writer.println("==================");
+				writer.println("Timestamp: " + new Date());
+				writer.println("Command: " + commandLabel);
+				writer.println("Sender: " + (sender != null ? sender.getSender().getName() : "Unknown"));
+				writer.println("Exception: " + exception.getClass().getSimpleName());
+				writer.println("Message: " + exception.getMessage());
+				writer.println();
+				writer.println("Stack Trace:");
+				writer.println("============");
+				exception.printStackTrace(writer);
+			}
+		}
+		catch (IOException e)
+		{
+			LOGGER.log(Level.WARNING, "Failed to save error to file", e);
 		}
 	}
 

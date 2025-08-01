@@ -63,18 +63,27 @@ public class YamlStorageReader implements IStorageReader
 		}
 		catch (YAMLException e)
 		{
+			// Log the YAML parsing error with full details
+			plugin.getLogger().warning("YAML parsing error in " + clazz.getSimpleName() + ": " + e.getMessage());
+			plugin.getLogger().warning("Attempting to create clean object instance...");
+			
 			// If YAML parsing fails, try to create a clean object
 			try
 			{
-				return clazz.newInstance();
+				T cleanObject = clazz.newInstance();
+				plugin.getLogger().info("Successfully created clean " + clazz.getSimpleName() + " instance");
+				return cleanObject;
 			}
 			catch (Exception ex)
 			{
+				plugin.getLogger().severe("Failed to create clean " + clazz.getSimpleName() + " instance: " + ex.getMessage());
 				throw new ObjectLoadException(ex);
 			}
 		}
 		catch (Exception e)
 		{
+			// Log the general error with full details
+			plugin.getLogger().severe("Error loading " + clazz.getSimpleName() + ": " + e.getMessage());
 			throw new ObjectLoadException(e);
 		}
 		finally
@@ -85,7 +94,7 @@ public class YamlStorageReader implements IStorageReader
 	
 	private void applyMapToObject(Object object, Map<?, ?> data) throws Exception
 	{
-		// Use reflection to set fields from the map data
+		// Get all declared fields of the object
 		java.lang.reflect.Field[] fields = object.getClass().getDeclaredFields();
 		
 		for (java.lang.reflect.Field field : fields)
@@ -93,73 +102,98 @@ public class YamlStorageReader implements IStorageReader
 			field.setAccessible(true);
 			String fieldName = field.getName();
 			
+			// Check if the field exists in the data map
 			if (data.containsKey(fieldName))
 			{
 				Object value = data.get(fieldName);
 				
-				// Handle different field types safely
-				if (value != null)
+				try
 				{
-					try
+					// Handle different types of values
+					if (value instanceof Map)
 					{
-						if (field.getType().isAssignableFrom(value.getClass()))
+						// For Map fields, we need to handle them specially
+						if (field.getType().isAssignableFrom(Map.class))
 						{
 							field.set(object, value);
 						}
-						else if (field.getType() == String.class)
+						else
 						{
-							field.set(object, value.toString());
-						}
-						else if (field.getType() == int.class || field.getType() == Integer.class)
-						{
-							if (value instanceof Number)
-							{
-								field.set(object, ((Number) value).intValue());
-							}
-							else
-							{
-								field.set(object, Integer.parseInt(value.toString()));
-							}
-						}
-						else if (field.getType() == double.class || field.getType() == Double.class)
-						{
-							if (value instanceof Number)
-							{
-								field.set(object, ((Number) value).doubleValue());
-							}
-							else
-							{
-								field.set(object, Double.parseDouble(value.toString()));
-							}
-						}
-						else if (field.getType() == boolean.class || field.getType() == Boolean.class)
-						{
-							if (value instanceof Boolean)
-							{
-								field.set(object, value);
-							}
-							else
-							{
-								field.set(object, Boolean.parseBoolean(value.toString()));
-							}
-						}
-						else if (field.getType() == Map.class)
-						{
-							if (value instanceof Map)
-							{
-								field.set(object, value);
-							}
-							else
-							{
-								field.set(object, new HashMap<>());
-							}
+							// Try to create a new instance and apply the map data
+							Object fieldObject = field.getType().newInstance();
+							applyMapToObject(fieldObject, (Map<?, ?>) value);
+							field.set(object, fieldObject);
 						}
 					}
-					catch (Exception e)
+					else if (value instanceof java.util.List)
 					{
-						// Log the error but continue processing other fields
-						plugin.getLogger().warning("Failed to set field " + fieldName + " in " + object.getClass().getSimpleName() + ": " + e.getMessage());
+						// Handle List fields
+						if (field.getType().isAssignableFrom(java.util.List.class))
+						{
+							field.set(object, value);
+						}
 					}
+					else
+					{
+						// Handle primitive types and other objects
+						if (field.getType().isPrimitive())
+						{
+							// Handle primitive types
+							if (field.getType() == int.class && value instanceof Number)
+							{
+								field.setInt(object, ((Number) value).intValue());
+							}
+							else if (field.getType() == double.class && value instanceof Number)
+							{
+								field.setDouble(object, ((Number) value).doubleValue());
+							}
+							else if (field.getType() == boolean.class && value instanceof Boolean)
+							{
+								field.setBoolean(object, (Boolean) value);
+							}
+							else if (field.getType() == long.class && value instanceof Number)
+							{
+								field.setLong(object, ((Number) value).longValue());
+							}
+							else if (field.getType() == float.class && value instanceof Number)
+							{
+								field.setFloat(object, ((Number) value).floatValue());
+							}
+							else if (field.getType() == byte.class && value instanceof Number)
+							{
+								field.setByte(object, ((Number) value).byteValue());
+							}
+							else if (field.getType() == short.class && value instanceof Number)
+							{
+								field.setShort(object, ((Number) value).shortValue());
+							}
+							else if (field.getType() == char.class && value instanceof Character)
+							{
+								field.setChar(object, (Character) value);
+							}
+						}
+						else
+						{
+							// Handle non-primitive types
+							if (field.getType().isAssignableFrom(value.getClass()))
+							{
+								field.set(object, value);
+							}
+							else if (value instanceof String && field.getType() == java.math.BigDecimal.class)
+							{
+								field.set(object, new java.math.BigDecimal((String) value));
+							}
+							else if (value instanceof Number && field.getType() == java.math.BigDecimal.class)
+							{
+								field.set(object, new java.math.BigDecimal(value.toString()));
+							}
+						}
+					}
+				}
+				catch (Exception e)
+				{
+					// Log the error but continue processing other fields
+					plugin.getLogger().warning("Failed to set field " + fieldName + " in " + object.getClass().getSimpleName() + ": " + e.getMessage());
 				}
 			}
 		}

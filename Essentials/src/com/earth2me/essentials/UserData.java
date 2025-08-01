@@ -147,7 +147,15 @@ public abstract class UserData extends PlayerExtension implements IConf
 		{
 			try
 			{
-				search = getHomes().get(Integer.parseInt(search) - 1);
+				int homeIndex = Integer.parseInt(search) - 1;
+				List<String> homes = getHomes();
+				
+				if (homeIndex < 0 || homeIndex >= homes.size())
+				{
+					throw new IndexOutOfBoundsException("Home number " + search + " is out of range. Player has " + homes.size() + " homes.");
+				}
+				
+				search = homes.get(homeIndex);
 			}
 			catch (NumberFormatException e)
 			{
