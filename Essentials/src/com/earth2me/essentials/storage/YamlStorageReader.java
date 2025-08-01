@@ -8,6 +8,7 @@ import org.bukkit.plugin.Plugin;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
+import com.earth2me.essentials.storage.BukkitConstructor;
 
 public class YamlStorageReader implements IStorageReader
 {
@@ -37,8 +38,8 @@ public class YamlStorageReader implements IStorageReader
 		lock.lock();
 		try
 		{
-			// Use SafeConstructor to avoid security issues and compatibility problems
-			Yaml yaml = new Yaml(new SafeConstructor());
+			// Use BukkitConstructor to properly handle Location deserialization
+			Yaml yaml = new Yaml(new BukkitConstructor(clazz, plugin));
 			
 			// Load the YAML data
 			Object data = yaml.load(reader);

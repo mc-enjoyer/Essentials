@@ -1,5 +1,7 @@
 package com.earth2me.essentials.storage;
 
+
+import com.earth2me.essentials.storage.EnchantmentLevel;
 import com.earth2me.essentials.utils.NumberUtil;
 import java.lang.reflect.Field;
 import java.util.List;
@@ -19,6 +21,7 @@ import org.yaml.snakeyaml.constructor.CustomClassLoaderConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.nodes.*;
+import com.earth2me.essentials.storage.MapValueType;
 
 
 public class BukkitConstructor extends CustomClassLoaderConstructor
@@ -211,6 +214,7 @@ public class BukkitConstructor extends CustomClassLoaderConstructor
 				}
 				return new EnchantmentLevel(enchant, level);
 			}
+
 			return super.construct(node);
 		}
 	}
@@ -355,6 +359,46 @@ public class BukkitConstructor extends CustomClassLoaderConstructor
 							break;
 						}
 					}
+					
+					// Check for MapValueType annotation if type wasn't detected
+					if (!typeDetected && valueNode.getNodeId() != NodeId.scalar)
+					{
+						try
+						{
+							Field field = beanType.getDeclaredField(key);
+							if (field.isAnnotationPresent(MapValueType.class))
+							{
+								MapValueType annotation = field.getAnnotation(MapValueType.class);
+								Class<?> valueType = annotation.value();
+								
+								if (valueNode.getNodeId() == NodeId.sequence)
+								{
+									final SequenceNode snode = (SequenceNode)valueNode;
+									snode.setListType(valueType);
+									typeDetected = true;
+								}
+								else if (valueNode.getTag().equals(Tag.SET))
+								{
+									final MappingNode mnode = (MappingNode)valueNode;
+									mnode.setOnlyKeyType(valueType);
+									mnode.setUseClassConstructor(true);
+									typeDetected = true;
+								}
+								else if (property.getType().isAssignableFrom(Map.class))
+								{
+									final MappingNode mnode = (MappingNode)valueNode;
+									mnode.setTypes(String.class, valueType);
+									mnode.setUseClassConstructor(true);
+									typeDetected = true;
+								}
+							}
+						}
+						catch (NoSuchFieldException e)
+						{
+							// Field not found, continue with normal processing
+						}
+					}
+					
 					if (!typeDetected && valueNode.getNodeId() != NodeId.scalar)
 					{
 						// only if there is no explicit TypeDescription
