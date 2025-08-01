@@ -47,34 +47,23 @@
 			<artifactId>BOSEconomy</artifactId>
 			<version>v0.7.8.1</version>
 			<scope>system</scope>
-			<systemPath>${project.basedir}/../lib/BOSEconomy.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>de.bananaco</groupId>
-			<artifactId>bPermissions</artifactId>
-			<version>v2.12-DEV</version>
+			<systemPath>${basedir}/../lib/BOSEconomy.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>iConomy</groupId>
 			<artifactId>iConomy5</artifactId>
 			<version>5</version>
 			<scope>system</scope>
-			<systemPath>${project.basedir}/../lib/iCo5.jar</systemPath>
+			<systemPath>${basedir}/../lib/iCo5.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>iConomy</groupId>
 			<artifactId>iConomy6</artifactId>
 			<version>6</version>
 			<scope>system</scope>
-			<systemPath>${project.basedir}/../lib/iCo6.jar</systemPath>
+			<systemPath>${basedir}/../lib/iCo6.jar</systemPath>
 		</dependency>
-		<dependency>
-			<groupId>net.ess3</groupId>
-			<artifactId>GroupManager</artifactId>
-			<version>${project.version}</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/../EssentialsGroupManager/dist/EssentialsGroupManager.jar</systemPath>
-		</dependency>
+
 		<dependency>
 			<groupId>MultiCurrency</groupId>
 			<artifactId>MultiCurrency</artifactId>
@@ -111,16 +100,25 @@
 			<systemPath>${project.basedir}/../lib/SimplyPerms.jar</systemPath>
 		</dependency>
 		<dependency>
-			<groupId>net.milkbowl</groupId>
-			<artifactId>vault</artifactId>
-			<version>1.2.27</version>
-		</dependency>
-		<dependency>
 			<groupId>zPermissions</groupId>
 			<artifactId>zPermissions</artifactId>
 			<version>1.1</version>
 			<scope>system</scope>
 			<systemPath>${project.basedir}/../lib/zPermissions.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>de.bananaco</groupId>
+			<artifactId>bPermissions</artifactId>
+			<version>v2.12-DEV</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/../resources/bPermissions-v2.12-DEV.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>net.milkbowl</groupId>
+			<artifactId>vault</artifactId>
+			<version>1.2.27</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/../resources/Vault-1.2.27.jar</systemPath>
 		</dependency>
 	</dependencies>
 </project>

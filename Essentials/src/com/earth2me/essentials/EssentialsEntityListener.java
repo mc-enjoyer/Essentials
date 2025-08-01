@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import net.ess3.api.IEssentials;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
+import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -56,7 +57,7 @@ public class EssentialsEntityListener implements Listener
 		}
 		else if (eAttack instanceof Projectile && eDefend instanceof Player)
 		{
-			Entity shooter = ((Projectile)event.getDamager()).getShooter();
+			ProjectileSource shooter = ((Projectile)event.getDamager()).getShooter();
 			if (shooter instanceof Player)
 			{
 				final User attacker = ess.getUser((Player)shooter);

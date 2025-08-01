@@ -1,30 +1,26 @@
 package com.earth2me.essentials;
 
 import com.earth2me.essentials.utils.StringUtil;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ExecutionException;
 import net.ess3.api.IEssentials;
 import org.bukkit.entity.Player;
 
 
-public class UserMap extends CacheLoader<String, User> implements IConf
+public class UserMap implements IConf
 {
 	private final transient IEssentials ess;
-	private final transient Cache<String, User> users;
+	private final transient ConcurrentHashMap<String, User> users;
 	private final transient ConcurrentSkipListSet<String> keys = new ConcurrentSkipListSet<String>();
 
 	public UserMap(final IEssentials ess)
 	{
 		super();
 		this.ess = ess;
-		users = CacheBuilder.newBuilder().maximumSize(ess.getSettings().getMaxUserCacheCount()).softValues().build(this);		
+		this.users = new ConcurrentHashMap<String, User>();
 		loadAllUsersAsync(ess);
 	}
 
@@ -41,7 +37,7 @@ public class UserMap extends CacheLoader<String, User> implements IConf
 					return;
 				}
 				keys.clear();
-				users.invalidateAll();
+				users.clear();
 				for (String string : userdir.list())
 				{
 					if (!string.endsWith(".yml"))
@@ -62,21 +58,27 @@ public class UserMap extends CacheLoader<String, User> implements IConf
 
 	public User getUser(final String name)
 	{
+		User user = users.get(name);
+		if (user != null)
+		{
+			return user;
+		}
+		
 		try
 		{
-			return users.get(name);
+			user = load(name);
+			if (user != null)
+			{
+				users.put(name, user);
+			}
+			return user;
 		}
-		catch (ExecutionException ex)
-		{
-			return null;
-		}
-		catch (UncheckedExecutionException ex)
+		catch (Exception ex)
 		{
 			return null;
 		}
 	}
 
-	@Override
 	public User load(final String name) throws Exception
 	{
 		String sanitizedName = StringUtil.sanitizeFileName(name);
@@ -118,8 +120,8 @@ public class UserMap extends CacheLoader<String, User> implements IConf
 	public void removeUser(final String name)
 	{
 		keys.remove(StringUtil.sanitizeFileName(name));
-		users.invalidate(StringUtil.sanitizeFileName(name));
-		users.invalidate(name);
+		users.remove(StringUtil.sanitizeFileName(name));
+		users.remove(name);
 	}
 
 	public Set<String> getAllUniqueUsers()

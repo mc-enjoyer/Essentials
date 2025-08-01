@@ -93,11 +93,22 @@ public class EssentialsSign
 		return user.getName().substring(0, user.getName().length() > 13 ? 13 : user.getName().length());
 	}
 
+	/**
+	 * Override this method to skip throttling for optimized signs
+	 * @return true if throttling should be skipped
+	 */
+	protected boolean shouldSkipThrottle()
+	{
+		return false;
+	}
+
 	protected final boolean onSignInteract(final Block block, final Player player, final IEssentials ess)
 	{
 		final ISign sign = new BlockSign(block);
 		final User user = ess.getUser(player);
-		if (user.checkSignThrottle())
+		
+		// Skip throttle check for optimized signs (Sell and Buy)
+		if (!shouldSkipThrottle() && user.checkSignThrottle())
 		{
 			return false;
 		}

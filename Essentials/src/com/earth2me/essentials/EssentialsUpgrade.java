@@ -780,16 +780,7 @@ public class EssentialsUpgrade
 		doneFile.save();
 	}
 
-	private void warnMetrics()
-	{
-		if (doneFile.getBoolean("warnMetrics", false))
-		{
-			return;
-		}
-		ess.getSettings().setMetricsEnabled(false);
-		doneFile.setProperty("warnMetrics", true);
-		doneFile.save();
-	}
+
 
 	public void beforeSettings()
 	{
@@ -813,6 +804,6 @@ public class EssentialsUpgrade
 		deleteOldItemsCsv();
 		updateSpawnsToNewSpawnsConfig();
 		updateJailsToNewJailsConfig();
-		warnMetrics();
+
 	}
 }

@@ -41,7 +41,7 @@ public class BukkitConstructor extends CustomClassLoaderConstructor
 		{
 			if (node.getType().equals(Material.class))
 			{
-				final String val = (String)constructScalar((ScalarNode)node);
+				final String val = (String)construct((ScalarNode)node);
 				Material mat;
 				if (NumberUtil.isInt(val))
 				{
@@ -56,7 +56,7 @@ public class BukkitConstructor extends CustomClassLoaderConstructor
 			}
 			if (node.getType().equals(MaterialData.class))
 			{
-				final String val = (String)constructScalar((ScalarNode)node);
+				final String val = (String)construct((ScalarNode)node);
 				if (val.isEmpty())
 				{
 					return null;
@@ -89,7 +89,7 @@ public class BukkitConstructor extends CustomClassLoaderConstructor
 			}
 			if (node.getType().equals(ItemStack.class))
 			{
-				final String val = (String)constructScalar((ScalarNode)node);
+				final String val = (String)construct((ScalarNode)node);
 				if (val.isEmpty())
 				{
 					return null;
@@ -172,7 +172,7 @@ public class BukkitConstructor extends CustomClassLoaderConstructor
 			}
 			if (node.getType().equals(EnchantmentLevel.class))
 			{
-				final String val = (String)constructScalar((ScalarNode)node);
+				final String val = (String)construct((ScalarNode)node);
 				if (val.isEmpty())
 				{
 					return null;
@@ -234,31 +234,31 @@ public class BukkitConstructor extends CustomClassLoaderConstructor
 				}
 				for (NodeTuple nodeTuple : mnode.getValue())
 				{
-					final String key = (String)constructScalar((ScalarNode)nodeTuple.getKeyNode());
+					final String key = (String)construct((ScalarNode)nodeTuple.getKeyNode());
 					final ScalarNode snode = (ScalarNode)nodeTuple.getValueNode();
 					if (key.equalsIgnoreCase("world"))
 					{
-						worldName = (String)constructScalar(snode);
+						worldName = (String)construct(snode);
 					}
 					if (key.equalsIgnoreCase("x"))
 					{
-						x = Double.parseDouble((String)constructScalar(snode));
+						x = Double.parseDouble((String)construct(snode));
 					}
 					if (key.equalsIgnoreCase("y"))
 					{
-						y = Double.parseDouble((String)constructScalar(snode));
+						y = Double.parseDouble((String)construct(snode));
 					}
 					if (key.equalsIgnoreCase("z"))
 					{
-						z = Double.parseDouble((String)constructScalar(snode));
+						z = Double.parseDouble((String)construct(snode));
 					}
 					if (key.equalsIgnoreCase("yaw"))
 					{
-						yaw = Float.parseFloat((String)constructScalar(snode));
+						yaw = Float.parseFloat((String)construct(snode));
 					}
 					if (key.equalsIgnoreCase("pitch"))
 					{
-						pitch = Float.parseFloat((String)constructScalar(snode));
+						pitch = Float.parseFloat((String)construct(snode));
 					}
 				}
 				if (worldName == null || worldName.isEmpty())

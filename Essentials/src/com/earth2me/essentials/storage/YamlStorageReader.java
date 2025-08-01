@@ -1,18 +1,16 @@
 package com.earth2me.essentials.storage;
 
 import java.io.Reader;
-import java.lang.reflect.Field;
-import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.HashMap;
+import java.util.Map;
 import org.bukkit.plugin.Plugin;
-import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.error.YAMLException;
 
 public class YamlStorageReader implements IStorageReader
 {
-	private transient static final Map<Class, Yaml> PREPARED_YAMLS = Collections.synchronizedMap(new HashMap<Class, Yaml>());
 	private transient static final Map<Class, ReentrantLock> LOCKS = new HashMap<Class, ReentrantLock>();
 	private transient final Reader reader;
 	private transient final Plugin plugin;
@@ -26,12 +24,6 @@ public class YamlStorageReader implements IStorageReader
 	@Override
 	public <T extends StorageObject> T load(final Class<? extends T> clazz) throws ObjectLoadException
 	{
-		Yaml yaml = PREPARED_YAMLS.get(clazz);
-		if (yaml == null)
-		{
-			yaml = new Yaml(prepareConstructor(clazz));
-			PREPARED_YAMLS.put(clazz, yaml);
-		}
 		ReentrantLock lock;
 		synchronized (LOCKS)
 		{
@@ -39,84 +31,135 @@ public class YamlStorageReader implements IStorageReader
 			if (lock == null)
 			{
 				lock = new ReentrantLock();
+				LOCKS.put(clazz, lock);
 			}
 		}
 		lock.lock();
 		try
 		{
-			T object = (T)yaml.load(reader);
-			if (object == null) {
-				object = clazz.newInstance();
+			// Use SafeConstructor to avoid security issues and compatibility problems
+			Yaml yaml = new Yaml(new SafeConstructor());
+			
+			// Load the YAML data
+			Object data = yaml.load(reader);
+			
+			// Create the object instance
+			T object = clazz.newInstance();
+			
+			// If data is null, return the empty object
+			if (data == null)
+			{
+				return object;
 			}
+			
+			// Apply the data to the object
+			if (data instanceof Map)
+			{
+				applyMapToObject(object, (Map<?, ?>) data);
+			}
+			
 			return object;
 		}
-		catch (IllegalAccessException ex)
+		catch (YAMLException e)
 		{
-			throw new ObjectLoadException(ex);
+			// If YAML parsing fails, try to create a clean object
+			try
+			{
+				return clazz.newInstance();
+			}
+			catch (Exception ex)
+			{
+				throw new ObjectLoadException(ex);
+			}
 		}
-		catch (InstantiationException ex)
+		catch (Exception e)
 		{
-			throw new ObjectLoadException(ex);
+			throw new ObjectLoadException(e);
 		}
 		finally
 		{
 			lock.unlock();
 		}
 	}
-
-	private Constructor prepareConstructor(final Class<?> clazz)
+	
+	private void applyMapToObject(Object object, Map<?, ?> data) throws Exception
 	{
-		final Constructor constructor = new BukkitConstructor(clazz, plugin);
-		final Set<Class> classes = new HashSet<Class>();
-
-		prepareConstructor(constructor, classes, clazz);
-		return constructor;
-	}
-
-	private void prepareConstructor(final Constructor constructor, final Set<Class> classes, final Class clazz)
-	{
-		classes.add(clazz);
-		final TypeDescription description = new TypeDescription(clazz);
-		for (Field field : clazz.getDeclaredFields())
+		// Use reflection to set fields from the map data
+		java.lang.reflect.Field[] fields = object.getClass().getDeclaredFields();
+		
+		for (java.lang.reflect.Field field : fields)
 		{
-			prepareList(field, description, classes, constructor);
-			prepareMap(field, description, classes, constructor);
-			if (StorageObject.class.isAssignableFrom(field.getType())
-				&& !classes.contains(field.getType()))
+			field.setAccessible(true);
+			String fieldName = field.getName();
+			
+			if (data.containsKey(fieldName))
 			{
-				prepareConstructor(constructor, classes, field.getType());
-			}
-		}
-		constructor.addTypeDescription(description);
-	}
-
-	private void prepareList(final Field field, final TypeDescription description, final Set<Class> classes, final Constructor constructor)
-	{
-		final ListType listType = field.getAnnotation(ListType.class);
-		if (listType != null)
-		{
-			description.putListPropertyType(field.getName(), listType.value());
-			if (StorageObject.class.isAssignableFrom(listType.value())
-				&& !classes.contains(listType.value()))
-			{
-				prepareConstructor(constructor, classes, listType.value());
-			}
-		}
-	}
-
-	private void prepareMap(final Field field, final TypeDescription description, final Set<Class> classes, final Constructor constructor)
-	{
-		final MapValueType mapType = field.getAnnotation(MapValueType.class);
-		if (mapType != null)
-		{
-			final MapKeyType mapKeyType = field.getAnnotation(MapKeyType.class);
-			description.putMapPropertyType(field.getName(),
-										   mapKeyType == null ? String.class : mapKeyType.value(),
-										   mapType.value());
-			if (StorageObject.class.isAssignableFrom(mapType.value())
-				&& !classes.contains(mapType.value()))
-			{
-				prepareConstructor(constructor, classes, mapType.value());
+				Object value = data.get(fieldName);
+				
+				// Handle different field types safely
+				if (value != null)
+				{
+					try
+					{
+						if (field.getType().isAssignableFrom(value.getClass()))
+						{
+							field.set(object, value);
+						}
+						else if (field.getType() == String.class)
+						{
+							field.set(object, value.toString());
+						}
+						else if (field.getType() == int.class || field.getType() == Integer.class)
+						{
+							if (value instanceof Number)
+							{
+								field.set(object, ((Number) value).intValue());
+							}
+							else
+							{
+								field.set(object, Integer.parseInt(value.toString()));
+							}
+						}
+						else if (field.getType() == double.class || field.getType() == Double.class)
+						{
+							if (value instanceof Number)
+							{
+								field.set(object, ((Number) value).doubleValue());
+							}
+							else
+							{
+								field.set(object, Double.parseDouble(value.toString()));
+							}
+						}
+						else if (field.getType() == boolean.class || field.getType() == Boolean.class)
+						{
+							if (value instanceof Boolean)
+							{
+								field.set(object, value);
+							}
+							else
+							{
+								field.set(object, Boolean.parseBoolean(value.toString()));
+							}
+						}
+						else if (field.getType() == Map.class)
+						{
+							if (value instanceof Map)
+							{
+								field.set(object, value);
+							}
+							else
+							{
+								field.set(object, new HashMap<>());
+							}
+						}
+					}
+					catch (Exception e)
+					{
+						// Log the error but continue processing other fields
+						plugin.getLogger().warning("Failed to set field " + fieldName + " in " + object.getClass().getSimpleName() + ": " + e.getMessage());
+					}
+				}
 			}
 		}
 	}

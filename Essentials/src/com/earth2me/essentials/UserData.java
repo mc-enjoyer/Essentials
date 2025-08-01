@@ -44,6 +44,16 @@ public abstract class UserData extends PlayerExtension implements IConf
 	public final void reloadConfig()
 	{
 		config.load();
+		
+		// Migration: Check for UUID field and replace with playername
+		if (config.hasProperty("uuid"))
+		{
+			// Remove the UUID field and save the playername
+			config.removeProperty("uuid");
+			config.setProperty("playername", base.getName());
+			config.save();
+		}
+		
 		money = _getMoney();
 		unlimited = _getUnlimited();
 		powertools = _getPowertools();
@@ -870,9 +880,9 @@ public abstract class UserData extends PlayerExtension implements IConf
 		config.save();
 	}
 
-	public void trackUUID()
+	public void trackPlayerName()
 	{
-		config.setProperty("uuid", base.getUniqueId());
+		config.setProperty("playername", base.getName());
 		config.save();
 	}
 

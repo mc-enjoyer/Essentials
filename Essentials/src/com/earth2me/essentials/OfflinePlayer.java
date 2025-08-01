@@ -30,7 +30,7 @@ public class OfflinePlayer implements Player
 	private final transient IEssentials ess;
 	private transient Location location = new Location(null, 0, 0, 0, 0, 0);
 	private transient World world;
-	private final transient UUID uniqueId = UUID.randomUUID();
+	private final transient String playerName;
 	@Delegate(types = org.bukkit.OfflinePlayer.class)
 	private transient org.bukkit.OfflinePlayer base;
 	private boolean allowFlight = false;
@@ -41,6 +41,7 @@ public class OfflinePlayer implements Player
 		this.ess = ess;
 		this.world = ess.getServer().getWorlds().get(0);
 		this.base = ess.getServer().getOfflinePlayer(name);
+		this.playerName = name;
 	}
 
 	@Override
@@ -620,7 +621,7 @@ public class OfflinePlayer implements Player
 	@Override
 	public UUID getUniqueId()
 	{
-		return uniqueId;
+		return UUID.nameUUIDFromBytes(playerName.getBytes());
 	}
 
 	@Override
@@ -986,6 +987,12 @@ public class OfflinePlayer implements Player
 
 	@Override
 	public <T extends Projectile> T launchProjectile(Class<? extends T> arg0)
+	{
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	@Override
+	public <T extends Projectile> T launchProjectile(Class<? extends T> arg0, Vector vector)
 	{
 		throw new UnsupportedOperationException("Not supported yet.");
 	}

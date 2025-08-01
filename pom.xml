@@ -44,6 +44,14 @@
 			<id>ess-repo</id>
 			<url>http://repo.ess3.net/content/groups/public</url>
 		</repository>
+		<repository>
+			<id>spigot-repo</id>
+			<url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+		</repository>
+		<repository>
+			<id>sonatype</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</repository>
 	</repositories>
 
 	<distributionManagement>
@@ -61,30 +69,23 @@
 		<module>Essentials</module>
 		<module>EssentialsAntiBuild</module>
 		<module>EssentialsChat</module>
-		<module>EssentialsGeoIP</module>
 		<module>EssentialsProtect</module>
 		<module>EssentialsSpawn</module>
-		<module>EssentialsXMPP</module>
 	</modules>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.bukkit</groupId>
-			<artifactId>bukkit</artifactId>
-			<version>1.7.2-R0.3-SNAPSHOT</version>
+			<artifactId>craftbukkit</artifactId>
+			<version>LATEST</version>
 			<scope>system</scope>
-			<systemPath>${user.dir}/lib/bukkit.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.11</version>
-			<scope>test</scope>
+			<systemPath>${project.basedir}/resources/alfheim-craftbukkit-1.7.2-FINAL.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.12.2</version>
+			<version>1.18.30</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
@@ -95,45 +96,17 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
+				<version>3.11.0</version>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>8</source>
+					<target>8</target>
+					<encoding>UTF-8</encoding>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.7</version>
-				<executions>
-					<execution>
-						<phase>validate</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-					</execution>
-				</executions>
-				<dependencies>
-					<dependency>
-						<groupId>com.sun</groupId>
-						<artifactId>tools</artifactId>
-						<version>1.5.0</version>
-						<scope>system</scope>
-						<systemPath>${java.home}/../lib/tools.jar</systemPath>
-					</dependency>
-				</dependencies>
-				<configuration>
-					<target name="buildgm">
-						<replace dir="EssentialsGroupManager/src" includes="plugin.yml" token="version: GMBuildVer" value="version: ${GMVer}"/>
-						<ant dir="EssentialsGroupManager" antfile="build.xml"/>
-					</target>
-				</configuration>
-				<inherited>false</inherited>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
-				<version>2.8</version>
+				<version>3.6.1</version>
 				<configuration>
 					<outputDirectory>jars</outputDirectory>
 					<stripVersion>true</stripVersion>
@@ -179,7 +152,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
-				<version>2.6</version>
+				<version>3.3.1</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -251,7 +224,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-clean-plugin</artifactId>
-				<version>2.5</version>
+				<version>3.3.2</version>
 				<configuration>
 					<filesets>
 						<fileset>
@@ -270,12 +243,12 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>2.9.1</version>
+				<version>3.6.3</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-deploy-plugin</artifactId>
-				<version>2.8.1</version>
+				<version>3.1.1</version>
 				<configuration>
 					<deployAtEnd>true</deployAtEnd>
 				</configuration>
@@ -299,6 +272,8 @@
 		<build.number>TeamCity</build.number>
 		<GMVer>GMBuildVer</GMVer>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>8</maven.compiler.source>
+		<maven.compiler.target>8</maven.compiler.target>
 
 		<!-- Netbeans code style -->
 		<org-netbeans-modules-editor-indent.CodeStyle.project.expand-tabs>true</org-netbeans-modules-editor-indent.CodeStyle.project.expand-tabs>

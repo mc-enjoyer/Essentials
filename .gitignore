@@ -1,4 +1,5 @@
 .DS_Store
+build/
 /BuildAll/nbproject/private/
 /EssentialsProtect/nbproject/private/
 /EssentialsChat/nbproject/private/
@@ -49,3 +50,4 @@ target/
 dependency-reduced-pom.xml
 /Essentials/config.yml
 /Essentials/userdata/testplayer1.yml
+alfheim-craftbukkit-1.7.2-FINAL.jar

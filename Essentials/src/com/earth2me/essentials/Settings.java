@@ -26,7 +26,7 @@ public class Settings implements net.ess3.api.ISettings
 	private final transient EssentialsConf config;
 	private final static Logger logger = Logger.getLogger("Essentials");
 	private final transient IEssentials ess;
-	private boolean metricsEnabled = true;
+
 
 	public Settings(IEssentials ess)
 	{
@@ -1019,17 +1019,7 @@ public class Settings implements net.ess3.api.ISettings
 		return config.getLong("tpa-accept-cancellation", 120);
 	}
 
-	@Override
-	public boolean isMetricsEnabled()
-	{
-		return metricsEnabled;
-	}
 
-	@Override
-	public void setMetricsEnabled(boolean metricsEnabled)
-	{
-		this.metricsEnabled = metricsEnabled;
-	}
 	private long teleportInvulnerabilityTime;
 
 	private long _getTeleportInvulnerability()
