@@ -12,7 +12,7 @@ import net.ess3.api.IEssentials;
 public class NumberUtil
 {
 	static DecimalFormat threeDPlaces = new DecimalFormat("#,###.###");
-	static DecimalFormat currencyFormat = new DecimalFormat("#0.00", DecimalFormatSymbols.getInstance(Locale.US));
+	static DecimalFormat currencyFormat = new DecimalFormat("#,##0.00", DecimalFormatSymbols.getInstance(Locale.US));
 
 	public static String shortCurrency(final BigDecimal value, final IEssentials ess)
 	{
