@@ -4,6 +4,7 @@ package com.earth2me.essentials.storage;
 import com.earth2me.essentials.storage.EnchantmentLevel;
 import com.earth2me.essentials.utils.NumberUtil;
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -399,6 +400,24 @@ public class BukkitConstructor extends CustomClassLoaderConstructor
 						}
 					}
 					
+					// Handle case where a scalar value is encountered for a Map field
+					if (!typeDetected && valueNode.getNodeId() == NodeId.scalar && property.getType().isAssignableFrom(Map.class))
+					{
+						// If we encounter a scalar value for a Map field, create an empty map
+						// This handles corrupted YAML files where a scalar value is present instead of a mapping
+						try
+						{
+							Map<Object, Object> emptyMap = new HashMap<Object, Object>();
+							property.set(object, emptyMap);
+							continue; // Skip to next property
+						}
+						catch (Exception e)
+						{
+							// Log the error but continue processing
+							plugin.getLogger().warning("Failed to create empty map for field " + key + ": " + e.getMessage());
+						}
+					}
+					
 					if (!typeDetected && valueNode.getNodeId() != NodeId.scalar)
 					{
 						// only if there is no explicit TypeDescription
@@ -435,11 +454,83 @@ public class BukkitConstructor extends CustomClassLoaderConstructor
 							}
 						}
 					}
+					
+					// Additional safety check for scalar values in map fields
+					if (valueNode.getNodeId() == NodeId.scalar && property.getType().isAssignableFrom(Map.class))
+					{
+						// Create an empty map for scalar values in map fields
+						try
+						{
+							Map<Object, Object> emptyMap = new HashMap<Object, Object>();
+							property.set(object, emptyMap);
+							continue; // Skip to next property
+						}
+						catch (Exception e)
+						{
+							plugin.getLogger().warning("Failed to create empty map for field " + key + ": " + e.getMessage());
+						}
+					}
+					
+					// Handle the specific case where a scalar is encountered for a Map field with MapValueType annotation
+					if (valueNode.getNodeId() == NodeId.scalar)
+					{
+						try
+						{
+							Field field = beanType.getDeclaredField(key);
+							if (field.isAnnotationPresent(MapValueType.class) && property.getType().isAssignableFrom(Map.class))
+							{
+								// Create an empty map for the specific type
+								MapValueType annotation = field.getAnnotation(MapValueType.class);
+								Class<?> valueType = annotation.value();
+								
+								// Create a properly typed empty map
+								Map<String, Object> emptyMap = new HashMap<String, Object>();
+								property.set(object, emptyMap);
+								continue; // Skip to next property
+							}
+						}
+						catch (NoSuchFieldException e)
+						{
+							// Field not found, continue with normal processing
+						}
+						catch (Exception e)
+						{
+							plugin.getLogger().warning("Failed to handle scalar value for Map field " + key + ": " + e.getMessage());
+						}
+					}
+					
 					final Object value = constructObject(valueNode);
 					property.set(object, value);
 				}
 				catch (Exception e)
 				{
+					// Check if this is the specific case we're trying to handle
+					if (e.getMessage() != null && e.getMessage().contains("ScalarNode cannot be cast to") && e.getMessage().contains("MappingNode"))
+					{
+						plugin.getLogger().warning("Handling corrupted YAML for property " + key + ": " + e.getMessage());
+						
+						// Try to create an empty map for Map fields
+						try
+						{
+							Field field = beanType.getDeclaredField(key);
+							if (field.isAnnotationPresent(MapValueType.class))
+							{
+								Map<Object, Object> emptyMap = new HashMap<Object, Object>();
+								// Use reflection to set the field directly
+								field.setAccessible(true);
+								field.set(object, emptyMap);
+								plugin.getLogger().info("Successfully created empty map for corrupted field " + key);
+								continue; // Skip to next property
+							}
+						}
+						catch (Exception ex)
+						{
+							plugin.getLogger().warning("Failed to create empty map for field " + key + ": " + ex.getMessage());
+							// Continue with the exception to let the recovery mechanism handle it
+						}
+					}
+					
+					// Re-throw the exception to let the recovery mechanism handle it
 					throw new YAMLException("Cannot create property=" + key + " for JavaBean="
 											+ object + "; " + e.getMessage(), e);
 				}

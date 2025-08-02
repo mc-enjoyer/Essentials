@@ -65,30 +65,53 @@ public class YamlStorageReader implements IStorageReader
 		{
 			// Log the YAML parsing error with full details
 			plugin.getLogger().warning("YAML parsing error in " + clazz.getSimpleName() + ": " + e.getMessage());
-			plugin.getLogger().warning("Attempting to create clean object instance...");
+			
+			// Check if this is a specific case where a scalar is encountered for a map field
+			if (e.getMessage() != null && e.getMessage().contains("ScalarNode cannot be cast to") && e.getMessage().contains("MappingNode"))
+			{
+				plugin.getLogger().warning("Detected corrupted YAML with scalar value where mapping is expected. Creating clean object instance...");
+			}
+			else
+			{
+				plugin.getLogger().warning("Attempting to create clean object instance...");
+			}
 			
 			// If YAML parsing fails, try to create a clean object
-			try
-			{
-				T cleanObject = clazz.newInstance();
-				plugin.getLogger().info("Successfully created clean " + clazz.getSimpleName() + " instance");
-				return cleanObject;
-			}
-			catch (Exception ex)
-			{
-				plugin.getLogger().severe("Failed to create clean " + clazz.getSimpleName() + " instance: " + ex.getMessage());
-				throw new ObjectLoadException(ex);
-			}
+			return attemptRecovery(clazz, e);
 		}
 		catch (Exception e)
 		{
 			// Log the general error with full details
 			plugin.getLogger().severe("Error loading " + clazz.getSimpleName() + ": " + e.getMessage());
-			throw new ObjectLoadException(e);
+			return attemptRecovery(clazz, e);
 		}
 		finally
 		{
 			lock.unlock();
+		}
+	}
+	
+	/**
+	 * Attempts to recover from corrupted YAML by creating a clean object instance
+	 * @param clazz The class to instantiate
+	 * @param e The exception that occurred
+	 * @return A clean object instance
+	 * @throws ObjectLoadException if recovery fails
+	 */
+	private <T extends StorageObject> T attemptRecovery(Class<? extends T> clazz, Exception e) throws ObjectLoadException
+	{
+		plugin.getLogger().warning("Attempting to recover from YAML parsing error...");
+		
+		try
+		{
+			T cleanObject = clazz.newInstance();
+			plugin.getLogger().info("Successfully created clean " + clazz.getSimpleName() + " instance");
+			return cleanObject;
+		}
+		catch (Exception ex)
+		{
+			plugin.getLogger().severe("Failed to create clean " + clazz.getSimpleName() + " instance: " + ex.getMessage());
+			throw new ObjectLoadException(ex);
 		}
 	}
 	

@@ -21,7 +21,7 @@ public class EssentialsSpawn extends JavaPlugin
 {
 	private static final Logger LOGGER = Bukkit.getLogger();
 	private transient IEssentials ess;
-	private transient SpawnStorage spawns;
+	private transient SpawnStorageWrapper spawns;
 
 	@Override
 	public void onEnable()
@@ -38,7 +38,7 @@ public class EssentialsSpawn extends JavaPlugin
 			return;
 		}
 
-		spawns = new SpawnStorage(ess);
+		spawns = new SpawnStorageWrapper(ess);
 		ess.addReloadListener(spawns);
 
 		final EssentialsSpawnPlayerListener playerListener = new EssentialsSpawnPlayerListener(ess, spawns);

@@ -26,9 +26,9 @@ public class EssentialsSpawnPlayerListener implements Listener
 {
 	private static final Logger LOGGER = Bukkit.getLogger();
 	private final transient IEssentials ess;
-	private final transient SpawnStorage spawns;
+	private final transient SpawnStorageWrapper spawns;
 
-	public EssentialsSpawnPlayerListener(final IEssentials ess, final SpawnStorage spawns)
+	public EssentialsSpawnPlayerListener(final IEssentials ess, final SpawnStorageWrapper spawns)
 	{
 		super();
 		this.ess = ess;
