@@ -3,6 +3,7 @@ package com.earth2me.essentials;
 import static com.earth2me.essentials.I18n._;
 import com.earth2me.essentials.craftbukkit.InventoryWorkaround;
 import com.earth2me.essentials.craftbukkit.SetExpFix;
+import com.earth2me.essentials.utils.SpawnerNamingUtil;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -140,8 +141,11 @@ public class Trade
 		}
 		if (getItemStack() != null)
 		{
+			// Apply spawner naming if the item is a spawner
+			ItemStack itemToGive = SpawnerNamingUtil.applySpawnerNaming(getItemStack());
+			
 			// This stores the would be overflow
-			Map<Integer, ItemStack> overFlow = InventoryWorkaround.addAllItems(user.getBase().getInventory(), getItemStack());
+			Map<Integer, ItemStack> overFlow = InventoryWorkaround.addAllItems(user.getBase().getInventory(), itemToGive);
 
 			if (overFlow != null)
 			{
@@ -157,7 +161,7 @@ public class Trade
 
 				case RETURN:
 					// Pay the user the items, and return overflow
-					final Map<Integer, ItemStack> returnStack = InventoryWorkaround.addItems(user.getBase().getInventory(), getItemStack());
+					final Map<Integer, ItemStack> returnStack = InventoryWorkaround.addItems(user.getBase().getInventory(), itemToGive);
 					user.getBase().updateInventory();
 
 					if (ess.getSettings().isDebug())
@@ -169,23 +173,26 @@ public class Trade
 
 				case DROP:
 					// Pay the users the items directly, and drop the rest, will always return no overflow.
-					final Map<Integer, ItemStack> leftOver = InventoryWorkaround.addItems(user.getBase().getInventory(), getItemStack());
+					final Map<Integer, ItemStack> leftOver = InventoryWorkaround.addItems(user.getBase().getInventory(), itemToGive);
 					final Location loc = user.getBase().getLocation();
 					for (ItemStack loStack : leftOver.values())
 					{
-						final int maxStackSize = loStack.getType().getMaxStackSize();
-						final int stacks = loStack.getAmount() / maxStackSize;
-						final int leftover = loStack.getAmount() % maxStackSize;
+						// Apply spawner naming to dropped items
+						ItemStack renamedLoStack = SpawnerNamingUtil.applySpawnerNaming(loStack);
+						
+						final int maxStackSize = renamedLoStack.getType().getMaxStackSize();
+						final int stacks = renamedLoStack.getAmount() / maxStackSize;
+						final int leftover = renamedLoStack.getAmount() % maxStackSize;
 						final Item[] itemStacks = new Item[stacks + (leftover > 0 ? 1 : 0)];
 						for (int i = 0; i < stacks; i++)
 						{
-							final ItemStack stack = loStack.clone();
+							final ItemStack stack = renamedLoStack.clone();
 							stack.setAmount(maxStackSize);
 							itemStacks[i] = loc.getWorld().dropItem(loc, stack);
 						}
 						if (leftover > 0)
 						{
-							final ItemStack stack = loStack.clone();
+							final ItemStack stack = renamedLoStack.clone();
 							stack.setAmount(leftover);
 							itemStacks[stacks] = loc.getWorld().dropItem(loc, stack);
 						}

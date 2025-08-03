@@ -7,6 +7,7 @@ import com.earth2me.essentials.User;
 import static com.earth2me.essentials.I18n._;
 import net.ess3.api.IEssentials;
 import net.ess3.api.MaxMoneyException;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -112,12 +113,12 @@ public class SignSell extends EssentialsSign
 					inventory.setItem(i, null);
 				}
 			}
-
 			// Give money to player
 			player.giveMoney(totalMoney);
 
 			// Notify player
 			player.sendMessage(_("itemSold", totalMoney.toString(), totalAmount, ess.getItemDb().name(signItem), pricePerItem.toString()));
+			Bukkit.getPlayer(playerName).updateInventory();
 
 			// Log the transaction
 			Trade.log("Sign", "BulkSell", "Interact", username, new Trade(totalAmount, ess), username, new Trade(totalMoney, ess), sign.getBlock().getLocation(), ess);
