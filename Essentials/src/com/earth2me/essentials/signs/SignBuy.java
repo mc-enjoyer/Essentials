@@ -3,6 +3,7 @@ package com.earth2me.essentials.signs;
 import com.earth2me.essentials.ChargeException;
 import com.earth2me.essentials.Trade;
 import com.earth2me.essentials.User;
+import com.earth2me.essentials.commands.InventoryFullException;
 import net.ess3.api.IEssentials;
 import net.ess3.api.MaxMoneyException;
 import static com.earth2me.essentials.I18n._;
@@ -55,11 +56,8 @@ public class SignBuy extends EssentialsSign
 			// Check if player can receive items
 			if (!items.pay(player))
 			{
-				// Log detailed error to console
-				ess.getLogger().warning("Buy sign inventory full for player " + username);
-				// Show inventory full message to player
-				ess.showError(player.getSource(), new Exception(_("inventoryFull")), "sign: Buy");
-				return false; // Inventory full
+				// Throw InventoryFullException instead of logging and showing generic error
+				throw new InventoryFullException();
 			}
 			
 			// Process the trade immediately

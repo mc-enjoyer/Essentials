@@ -20,10 +20,13 @@ package com.earth2me.essentials;
 import static com.earth2me.essentials.I18n._;
 import com.earth2me.essentials.commands.EssentialsCommand;
 import com.earth2me.essentials.commands.IEssentialsCommand;
+import com.earth2me.essentials.commands.InventoryFullException;
 import com.earth2me.essentials.commands.NoChargeException;
 import com.earth2me.essentials.commands.NotEnoughArgumentsException;
+import com.earth2me.essentials.commands.PlayerNotFoundException;
 import com.earth2me.essentials.commands.QuietAbortException;
 import com.earth2me.essentials.commands.WarpNotFoundException;
+import com.earth2me.essentials.signs.SignException;
 
 import com.earth2me.essentials.perm.PermissionsHandler;
 import net.ess3.api.MaxMoneyException;
@@ -562,26 +565,47 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials
 	@Override
 	public void showError(final CommandSource sender, final Throwable exception, final String commandLabel)
 	{
-		// Always log the full error details to console
+		// Check if this is one of the exceptions that should not be logged
+		if (exception instanceof ChargeException || 
+			exception instanceof WarpNotFoundException || 
+			exception instanceof PlayerNotFoundException || 
+			exception instanceof SignException ||
+			exception instanceof InventoryFullException)
+		{
+			// Don't log these exceptions to console or files, just show message to player
+			if (exception instanceof ChargeException)
+			{
+				sender.sendMessage(exception.getMessage());
+			}
+			else if (exception instanceof WarpNotFoundException)
+			{
+				sender.sendMessage(exception.getMessage());
+			}
+			else if (exception instanceof PlayerNotFoundException)
+			{
+				sender.sendMessage(exception.getMessage());
+			}
+			else if (exception instanceof SignException)
+			{
+				sender.sendMessage(exception.getMessage());
+			}
+			else if (exception instanceof InventoryFullException)
+			{
+				sender.sendMessage(exception.getMessage());
+			}
+			return;
+		}
+		
+		// Always log the full error details to console for other exceptions
 		LOGGER.log(Level.WARNING, _("errorCallingCommand", commandLabel), exception);
 		
-		// Save error to file for debugging
+		// Save error to file for debugging for other exceptions
 		saveErrorToFile(exception, commandLabel, sender);
 		
 		// Handle specific exceptions that should show their message to players
-		if (exception instanceof ChargeException)
-		{
-			// ChargeException contains user-friendly messages that should be shown to players
-			sender.sendMessage(exception.getMessage());
-		}
-		else if (exception instanceof MaxMoneyException)
+		if (exception instanceof MaxMoneyException)
 		{
 			// MaxMoneyException contains user-friendly messages
-			sender.sendMessage(exception.getMessage());
-		}
-		else if (exception instanceof WarpNotFoundException)
-		{
-			// WarpNotFoundException contains user-friendly messages
 			sender.sendMessage(exception.getMessage());
 		}
 		else if (exception instanceof NotEnoughArgumentsException)

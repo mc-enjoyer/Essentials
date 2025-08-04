@@ -1,6 +1,7 @@
 package com.earth2me.essentials.signs;
 
 import com.earth2me.essentials.*;
+import com.earth2me.essentials.commands.InventoryFullException;
 import static com.earth2me.essentials.I18n._;
 import com.earth2me.essentials.Trade.OverflowType;
 import com.earth2me.essentials.Trade.TradeType;
@@ -40,7 +41,7 @@ public class SignTrade extends EssentialsSign
 	}
 
 	@Override
-	protected boolean onSignInteract(final ISign sign, final User player, final String username, final IEssentials ess) throws SignException, ChargeException, MaxMoneyException
+	protected boolean onSignInteract(final ISign sign, final User player, final String username, final IEssentials ess) throws SignException, ChargeException, MaxMoneyException, InventoryFullException
 	{
 		if (sign.getLine(3).substring(2).equalsIgnoreCase(username))
 		{
@@ -83,7 +84,7 @@ public class SignTrade extends EssentialsSign
 			{
 				subtractAmount(sign, 1, charge, ess);
 				addAmount(sign, 2, trade, ess);
-				throw new ChargeException("Full inventory");
+				throw new InventoryFullException();
 			}
 			charge.charge(player);
 			Trade.log("Sign", "Trade", "Interact", sign.getLine(3), charge, username, trade, sign.getBlock().getLocation(), ess);

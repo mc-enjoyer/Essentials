@@ -1,6 +1,7 @@
 package com.earth2me.essentials.signs;
 
 import com.earth2me.essentials.*;
+import com.earth2me.essentials.commands.InventoryFullException;
 import static com.earth2me.essentials.I18n._;
 import com.earth2me.essentials.utils.NumberUtil;
 import java.math.BigDecimal;
@@ -174,7 +175,7 @@ public class EssentialsSign
 		return true;
 	}
 
-	protected boolean onSignInteract(final ISign sign, final User player, final String username, final IEssentials ess) throws SignException, ChargeException, MaxMoneyException
+	protected boolean onSignInteract(final ISign sign, final User player, final String username, final IEssentials ess) throws SignException, ChargeException, MaxMoneyException, InventoryFullException
 	{
 		return true;
 	}
@@ -406,7 +407,9 @@ public class EssentialsSign
 	{
 		try
 		{
-			final int quantity = Integer.parseInt(line);
+			// Remove commas from the line before parsing
+			final String cleanLine = line.replace(",", "");
+			final int quantity = Integer.parseInt(cleanLine);
 
 			return quantity;
 		}
@@ -452,7 +455,7 @@ public class EssentialsSign
 
 	protected final BigDecimal getMoney(final String line) throws SignException
 	{
-		final boolean isMoney = line.matches("^[^0-9-\\.][\\.0-9]+$");
+		final boolean isMoney = line.matches("^[^0-9-\\.][\\.0-9,]+$");
 		return isMoney ? getBigDecimalPositive(line.substring(1)) : null;
 	}
 
@@ -470,7 +473,9 @@ public class EssentialsSign
 	{
 		try
 		{
-			return new BigDecimal(line);
+			// Remove commas from the line before parsing
+			final String cleanLine = line.replace(",", "");
+			return new BigDecimal(cleanLine);
 		}
 		catch (ArithmeticException ex)
 		{
