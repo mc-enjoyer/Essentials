@@ -18,8 +18,10 @@ import net.ess3.api.IEssentials;
 import net.ess3.api.IUser;
 import net.ess3.api.MaxMoneyException;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 
 public class Trade
@@ -103,10 +105,27 @@ public class Trade
 			throw new ChargeException(_("notEnoughMoney"));
 		}
 
-		if (getItemStack() != null
-			&& !user.getBase().getInventory().containsAtLeast(itemStack, itemStack.getAmount()))
+		if (getItemStack() != null)
 		{
-			throw new ChargeException(_("missingItems", getItemStack().getAmount(), ess.getItemDb().name(getItemStack())));
+			// Special handling for spawners - check if player has enough spawners regardless of display name
+			if (SpawnerNamingUtil.isSpawner(getItemStack()))
+			{
+				int requiredAmount = getItemStack().getAmount();
+				int playerHas = countSpawnersInInventory(user.getBase().getInventory(), getItemStack().getDurability());
+				
+				if (playerHas < requiredAmount)
+				{
+					throw new ChargeException(_("missingItems", requiredAmount, ess.getItemDb().name(getItemStack())));
+				}
+			}
+			else
+			{
+				// Normal item checking for non-spawner items
+				if (!user.getBase().getInventory().containsAtLeast(itemStack, itemStack.getAmount()))
+				{
+					throw new ChargeException(_("missingItems", getItemStack().getAmount(), ess.getItemDb().name(getItemStack())));
+				}
+			}
 		}
 
 		BigDecimal money;
@@ -215,6 +234,62 @@ public class Trade
 		}
 		return null;
 	}
+	
+	/**
+	 * Counts the number of spawners in a player's inventory with the specified durability
+	 * @param inventory The player's inventory
+	 * @param durability The durability value to match
+	 * @return The total number of matching spawners
+	 */
+	private int countSpawnersInInventory(PlayerInventory inventory, short durability)
+	{
+		int count = 0;
+		for (ItemStack item : inventory.getContents())
+		{
+			if (item != null && 
+				item.getType() == Material.MOB_SPAWNER && 
+				item.getDurability() == durability)
+			{
+				count += item.getAmount();
+			}
+		}
+		return count;
+	}
+	
+	/**
+	 * Removes the specified amount of spawners from a player's inventory
+	 * @param inventory The player's inventory
+	 * @param durability The durability value to match
+	 * @param amount The amount to remove
+	 */
+	private void removeSpawnersFromInventory(PlayerInventory inventory, short durability, int amount)
+	{
+		int remainingToRemove = amount;
+		
+		for (int i = 0; i < inventory.getSize() && remainingToRemove > 0; i++)
+		{
+			ItemStack item = inventory.getItem(i);
+			if (item != null && 
+				item.getType() == Material.MOB_SPAWNER && 
+				item.getDurability() == durability)
+			{
+				int itemAmount = item.getAmount();
+				if (itemAmount <= remainingToRemove)
+				{
+					// Remove entire stack
+					inventory.setItem(i, null);
+					remainingToRemove -= itemAmount;
+				}
+				else
+				{
+					// Remove partial stack
+					item.setAmount(itemAmount - remainingToRemove);
+					inventory.setItem(i, item);
+					remainingToRemove = 0;
+				}
+			}
+		}
+	}
 
 	public void charge(final IUser user) throws ChargeException
 	{
@@ -240,11 +315,30 @@ public class Trade
 			{
 				ess.getLogger().log(Level.INFO, "charging user " + user.getName() + " itemstack " + getItemStack().toString());
 			}
-			if (!user.getBase().getInventory().containsAtLeast(getItemStack(), getItemStack().getAmount()))
+			
+			// Special handling for spawners - remove spawners regardless of display name
+			if (SpawnerNamingUtil.isSpawner(getItemStack()))
 			{
-				throw new ChargeException(_("missingItems", getItemStack().getAmount(), getItemStack().getType().toString().toLowerCase(Locale.ENGLISH).replace("_", " ")));
+				int requiredAmount = getItemStack().getAmount();
+				int playerHas = countSpawnersInInventory(user.getBase().getInventory(), getItemStack().getDurability());
+				
+				if (playerHas < requiredAmount)
+				{
+					throw new ChargeException(_("missingItems", requiredAmount, ess.getItemDb().name(getItemStack())));
+				}
+				
+				// Remove the required amount of spawners
+				removeSpawnersFromInventory(user.getBase().getInventory(), getItemStack().getDurability(), requiredAmount);
 			}
-			user.getBase().getInventory().removeItem(getItemStack());
+			else
+			{
+				// Normal item removal for non-spawner items
+				if (!user.getBase().getInventory().containsAtLeast(getItemStack(), getItemStack().getAmount()))
+				{
+					throw new ChargeException(_("missingItems", getItemStack().getAmount(), getItemStack().getType().toString().toLowerCase(Locale.ENGLISH).replace("_", " ")));
+				}
+				user.getBase().getInventory().removeItem(getItemStack());
+			}
 			user.getBase().updateInventory();
 		}
 		if (command != null)

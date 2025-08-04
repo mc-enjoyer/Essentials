@@ -80,10 +80,20 @@ public class SignSell extends EssentialsSign
 		for (ItemStack item : inventory.getContents())
 		{
 			if (item != null && item.getType() != Material.AIR && 
-				item.getType() == signItem.getType() && 
-				item.getData().equals(signItem.getData()))
+				item.getType() == signItem.getType())
 			{
-				totalAmount += item.getAmount();
+				// Special handling for spawners - compare by durability instead of data
+				if (signItem.getType() == Material.MOB_SPAWNER)
+				{
+					if (item.getDurability() == signItem.getDurability())
+					{
+						totalAmount += item.getAmount();
+					}
+				}
+				else if (item.getData().equals(signItem.getData()))
+				{
+					totalAmount += item.getAmount();
+				}
 			}
 		}
 
@@ -107,10 +117,20 @@ public class SignSell extends EssentialsSign
 			{
 				ItemStack item = inventory.getItem(i);
 				if (item != null && item.getType() != Material.AIR && 
-					item.getType() == signItem.getType() && 
-					item.getData().equals(signItem.getData()))
+					item.getType() == signItem.getType())
 				{
-					inventory.setItem(i, null);
+					// Special handling for spawners - compare by durability instead of data
+					if (signItem.getType() == Material.MOB_SPAWNER)
+					{
+						if (item.getDurability() == signItem.getDurability())
+						{
+							inventory.setItem(i, null);
+						}
+					}
+					else if (item.getData().equals(signItem.getData()))
+					{
+						inventory.setItem(i, null);
+					}
 				}
 			}
 			// Give money to player
