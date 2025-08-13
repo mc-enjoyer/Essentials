@@ -48,7 +48,13 @@ public class Commandsethome extends EssentialsCommand
 				}
 			}
 		}
-		if (checkHomeLimit(user, usersHome, name))
+		String homeLimitError = checkHomeLimit(user, usersHome, name);
+		if (homeLimitError != null)
+		{
+			user.sendMessage(homeLimitError);
+			return;
+		}
+		if (shouldUseDefaultHome(user, usersHome, name))
 		{
 			name = "home";
 		}
@@ -61,19 +67,32 @@ public class Commandsethome extends EssentialsCommand
 
 	}
 
-	private boolean checkHomeLimit(final User user, final User usersHome, String name) throws Exception
+	private String checkHomeLimit(final User user, final User usersHome, String name)
 	{
 		if (!user.isAuthorized("essentials.sethome.multiple.unlimited"))
 		{
 			int limit = ess.getSettings().getHomeLimit(user);
 			if (usersHome.getHomes().size() == limit && usersHome.getHomes().contains(name))
 			{
-				return false;
+				return null;
 			}
 			if (usersHome.getHomes().size() >= limit)
 			{
-				throw new Exception(_("maxHomes", ess.getSettings().getHomeLimit(user)));
+				return _("maxHomes", ess.getSettings().getHomeLimit(user));
 			}
+			if (limit == 1)
+			{
+				return null;
+			}
+		}
+		return null;
+	}
+
+	private boolean shouldUseDefaultHome(final User user, final User usersHome, String name)
+	{
+		if (!user.isAuthorized("essentials.sethome.multiple.unlimited"))
+		{
+			int limit = ess.getSettings().getHomeLimit(user);
 			if (limit == 1)
 			{
 				return true;
